@@ -14,7 +14,7 @@ export function FormatControls({ format, mode, quality, disabled, onFormatChange
   return (
     <div className="control-row row gy-3 align-items-end">
       {mode === 'convert' && <div className="col-12 col-md-auto">
-          <span className="control-label">Output format</span>
+          <span className="control-label d-block">Output format</span>
           <div className="segmented btn-group" role="group" aria-label="Output format">
             {(['png', 'jpg'] as const).map((option) => (
               <button key={option} className={format === option ? 'selected btn btn-success' : 'btn btn-outline-success'} onClick={() => onFormatChange(option)}>{option.toUpperCase()}</button>

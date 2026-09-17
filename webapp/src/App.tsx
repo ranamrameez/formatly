@@ -106,7 +106,7 @@ function App() {
             <h1>{activeView === 'Recent' ? 'Your recent work' : activeView === 'Compress' ? 'Shrink files with control.' : 'Move files between formats.'}</h1>
             <p className="subtitle">{activeView === 'Compress' ? 'Reduce file size while keeping your files useful.' : 'Convert, preview, and batch-download files without sending them anywhere.'}</p>
           </div>
-          <div className="privacy-note"><span>◉</span><span>Local by default<br /><small>Files stay on this device</small></span></div>
+          <div className="privacy-note"><span className="privacy-mark" aria-hidden="true">⌂</span><span>Local by default<br /><small>Files stay on this device</small></span></div>
         </div>
         {showWorkspace ? <>
           <div className="mode-tabs nav nav-pills mb-3" role="tablist">
@@ -118,7 +118,7 @@ function App() {
           {items.length > 0 && <QueueList items={items} onDownload={downloadItem} onDownloadBatch={downloadBatch} />}
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>
-      <footer><span>Formatly · private file tools</span><span>Web ready · desktop and mobile compatible</span></footer>
+      <footer><span>Formatly · private file tools</span></footer>
     </main>
   )
 }
