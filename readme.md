@@ -2,6 +2,8 @@
 
 A greenfield utility for converting, compressing, and managing files across web and mobile.
 
+The web app is published through GitHub Pages at https://ranamrameez.github.io/formatly/ after changes to `webapp/` are pushed to `main`.
+
 ## Product Direction
 
 File Utility will help people process documents and images without juggling separate tools. The core workflow is intentionally simple:
