@@ -26,9 +26,10 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
           <div className="file-icon col-auto">{item.file.name.split('.').pop()?.toUpperCase()}</div>
           <div className="file-meta col min-w-0">
             <strong title={item.file.name}>{item.file.name}</strong>
-            <span>{formatBytes(item.file.size)}{item.message ? ` · ${item.message}` : ''}</span>
+            <span>{item.message ?? 'Waiting to process'}</span>
             <div className="item-progress progress"><span className="progress-bar bg-warning" style={{ width: `${item.progress}%` }} /></div>
           </div>
+          <SizeMetrics item={item} />
           <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
           {item.status === 'Done' && <button className="download-button btn btn-link btn-sm col-auto" onClick={() => onDownload(item)}>Download</button>}
         </div>
@@ -37,8 +38,35 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
   )
 }
 
+function SizeMetrics({ item }: { item: QueueItem }) {
+  const finalSize = item.output?.size
+  const difference = finalSize === undefined ? undefined : finalSize - item.file.size
+  const percent = difference === undefined ? undefined : (difference / item.file.size) * 100
+
+  return (
+    <div className="size-metrics col-12 col-lg-4 row row-cols-2 row-cols-sm-4 g-2 text-secondary small">
+      <Metric label="Initial" value={formatBytes(item.file.size)} />
+      <Metric label="Final" value={finalSize === undefined ? '-' : formatBytes(finalSize)} />
+      <Metric label="Difference" value={difference === undefined ? '-' : formatSignedBytes(difference)} />
+      <Metric label="Size %" value={percent === undefined ? '-' : formatSignedPercent(percent)} />
+    </div>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div><span className="d-block text-uppercase metrics-label">{label}</span><strong className="text-body">{value}</strong></div>
+}
+
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatSignedBytes(bytes: number) {
+  return `${bytes > 0 ? '+' : ''}${formatBytes(bytes)}`
+}
+
+function formatSignedPercent(percent: number) {
+  return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`
 }
