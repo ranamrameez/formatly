@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
+import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { FileDropzone } from './components/FileDropzone'
 import { FormatControls } from './components/FormatControls'
 import { QueueList } from './components/QueueList'
 import type { OutputFormat, QueueItem } from './types'
 import './App.css'
 
-const supportedTypes = ['image/png', 'image/jpeg', 'image/webp']
+GlobalWorkerOptions.workerSrc = pdfWorkerUrl
+
+const supportedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp']
 
 type View = 'Convert' | 'Compress' | 'Recent'
 
@@ -19,7 +23,7 @@ function App() {
   const [isConverting, setIsConverting] = useState(false)
 
   const addFiles = (files: File[]) => {
-    const accepted = files.filter((file) => supportedTypes.includes(file.type))
+    const accepted = files.filter((file) => supportedTypes.includes(file.type) || file.name.toLowerCase().endsWith('.pdf'))
     const rejectedCount = files.length - accepted.length
     const newItems = accepted.map((file) => ({
       id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
@@ -42,31 +46,21 @@ function App() {
 
   const convertItem = (item: QueueItem) => new Promise<void>((resolve) => {
     updateItem(item.id, { status: 'Converting', progress: 10, message: undefined })
-    const source = URL.createObjectURL(item.file)
-    const image = new Image()
-    image.onload = () => {
+    createCanvas(item.file).then(async (canvas) => {
       updateItem(item.id, { progress: 55 })
-      const canvas = document.createElement('canvas')
-      canvas.width = image.naturalWidth
-      canvas.height = image.naturalHeight
-      canvas.getContext('2d')?.drawImage(image, 0, 0)
-      canvas.toBlob((blob) => {
-        URL.revokeObjectURL(source)
-        if (!blob) {
-          updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not create output' })
-        } else {
-          const reduction = Math.max(0, Math.round((1 - blob.size / item.file.size) * 100))
-          updateItem(item.id, { status: 'Done', progress: 100, output: blob, message: `${reduction}% size change` })
-        }
-        resolve()
-      }, `image/${format}`, format === 'jpg' ? quality / 100 : undefined)
-    }
-    image.onerror = () => {
-      URL.revokeObjectURL(source)
-      updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not read image' })
+      const blob = await encodeCanvas(canvas, item.file.size, format, quality)
+      if (!blob) {
+        updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not create output' })
+      } else {
+        const sizeChange = Math.round((1 - blob.size / item.file.size) * 100)
+        const message = item.file.type === 'application/pdf' ? `page 1 converted · ${formatBytes(blob.size)}` : `${sizeChange}% size change · ${formatBytes(blob.size)}`
+        updateItem(item.id, { status: 'Done', progress: 100, output: blob, message })
+      }
       resolve()
-    }
-    image.src = source
+    }).catch(() => {
+      updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not read file' })
+      resolve()
+    })
   })
 
   const updateItem = (id: string, changes: Partial<QueueItem>) => {
@@ -135,6 +129,63 @@ function downloadBlob(blob: Blob, filename: string) {
   anchor.download = filename
   anchor.click()
   URL.revokeObjectURL(url)
+}
+
+async function createCanvas(file: File) {
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+    const pdfDocument = await getDocument({ data: await file.arrayBuffer() }).promise
+    const page = await pdfDocument.getPage(1)
+    const viewport = page.getViewport({ scale: 1.5 })
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.ceil(viewport.width)
+    canvas.height = Math.ceil(viewport.height)
+    await page.render({ canvas, viewport }).promise
+    return canvas
+  }
+
+  const source = URL.createObjectURL(file)
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image()
+      element.onload = () => resolve(element)
+      element.onerror = reject
+      element.src = source
+    })
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    canvas.getContext('2d')?.drawImage(image, 0, 0)
+    return canvas
+  } finally {
+    URL.revokeObjectURL(source)
+  }
+}
+
+async function encodeCanvas(source: HTMLCanvasElement, sourceSize: number, format: OutputFormat, requestedQuality: number) {
+  let canvas = source
+  let blob = await canvasToBlob(canvas, format, requestedQuality)
+  for (let attempt = 0; blob && blob.size > sourceSize && attempt < 3; attempt += 1) {
+    const scale = 0.8
+    const resized = document.createElement('canvas')
+    resized.width = Math.max(1, Math.floor(canvas.width * scale))
+    resized.height = Math.max(1, Math.floor(canvas.height * scale))
+    resized.getContext('2d')?.drawImage(canvas, 0, 0, resized.width, resized.height)
+    canvas = resized
+    blob = await canvasToBlob(canvas, format, Math.max(45, requestedQuality - (attempt + 1) * 12))
+  }
+  return blob
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, format: OutputFormat, quality: number) {
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, `image/${format}`, format === 'jpg' ? quality / 100 : undefined)
+  })
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export default App

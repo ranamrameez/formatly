@@ -30,9 +30,9 @@ export function FileDropzone({ isDragging, onFiles, onDraggingChange }: FileDrop
       <p className="text-secondary mb-3">or choose files from your device</p>
       <label className="primary-button btn btn-success">
         Browse files
-        <input type="file" hidden multiple accept="image/png,image/jpeg,image/webp" onChange={handleInput} />
+        <input type="file" hidden multiple accept="application/pdf,image/png,image/jpeg,image/webp" onChange={handleInput} />
       </label>
-      <span className="file-hint text-secondary mt-3">PNG, JPG, WebP · processed locally</span>
+      <span className="file-hint text-secondary mt-3">PDF, PNG, JPG, WebP · processed locally</span>
     </div>
   )
 }
