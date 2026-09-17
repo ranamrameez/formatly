@@ -91,9 +91,9 @@ function App() {
 
   return (
     <main className="app-shell">
-      <header className="topbar">
+      <header className="topbar navbar navbar-expand">
         <div className="brand"><span className="brand-mark">↗</span><span>File Utility</span></div>
-        <nav aria-label="Primary navigation">
+        <nav className="nav nav-underline ms-auto me-4" aria-label="Primary navigation">
           {(['Convert', 'Compress', 'Recent'] as const).map((view) => (
             <button key={view} className={activeView === view ? 'nav-link active' : 'nav-link'} onClick={() => setActiveView(view)}>{view}</button>
           ))}
@@ -110,9 +110,9 @@ function App() {
           <div className="privacy-note"><span>◉</span><span>Local by default<br /><small>Files stay on this device</small></span></div>
         </div>
         {showWorkspace ? <>
-          <div className="mode-tabs" role="tablist">
-            <button className={activeView === 'Convert' ? 'mode active' : 'mode'} onClick={() => setActiveView('Convert')}>Convert formats</button>
-            <button className={activeView === 'Compress' ? 'mode active' : 'mode'} onClick={() => setActiveView('Compress')}>Compress files</button>
+          <div className="mode-tabs nav nav-pills mb-3" role="tablist">
+            <button className={activeView === 'Convert' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Convert')}>Convert formats</button>
+            <button className={activeView === 'Compress' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Compress')}>Compress files</button>
           </div>
           <FileDropzone isDragging={isDragging} onFiles={addFiles} onDraggingChange={setIsDragging} />
           <FormatControls format={format} quality={quality} disabled={!items.length || isConverting} onFormatChange={setFormat} onQualityChange={setQuality} onConvert={convertBatch} />

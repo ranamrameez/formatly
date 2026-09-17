@@ -20,19 +20,19 @@ export function FileDropzone({ isDragging, onFiles, onDraggingChange }: FileDrop
 
   return (
     <div
-      className={isDragging ? 'dropzone dragging' : 'dropzone'}
+      className={isDragging ? 'dropzone dragging border border-2 border-success-subtle rounded-3' : 'dropzone border border-2 border-success-subtle rounded-3'}
       onDragOver={(event) => { event.preventDefault(); onDraggingChange(true) }}
       onDragLeave={() => onDraggingChange(false)}
       onDrop={handleDrop}
     >
-      <div className="upload-glyph">↑</div>
-      <h2>Drop files here</h2>
-      <p>or choose files from your device</p>
-      <label className="primary-button">
+      <div className="upload-glyph mb-3">↑</div>
+      <h2 className="h4">Drop files here</h2>
+      <p className="text-secondary mb-3">or choose files from your device</p>
+      <label className="primary-button btn btn-success">
         Browse files
         <input type="file" hidden multiple accept="image/png,image/jpeg,image/webp" onChange={handleInput} />
       </label>
-      <span className="file-hint">PNG, JPG, WebP · processed locally</span>
+      <span className="file-hint text-secondary mt-3">PNG, JPG, WebP · processed locally</span>
     </div>
   )
 }
