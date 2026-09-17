@@ -1,4 +1,4 @@
-# File Utility
+# Formatly
 
 A greenfield utility for converting, compressing, and managing files across web and mobile.
 

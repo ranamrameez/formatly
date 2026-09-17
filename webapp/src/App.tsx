@@ -86,7 +86,7 @@ function App() {
   return (
     <main className="app-shell">
       <header className="topbar navbar navbar-expand">
-        <div className="brand"><span className="brand-mark">↗</span><span>File Utility</span></div>
+        <div className="brand"><span className="brand-mark">↗</span><span>Formatly</span></div>
         <nav className="nav nav-underline ms-auto me-4" aria-label="Primary navigation">
           {(['Convert', 'Compress', 'Recent'] as const).map((view) => (
             <button key={view} className={activeView === view ? 'nav-link active' : 'nav-link'} onClick={() => setActiveView(view)}>{view}</button>
@@ -113,7 +113,7 @@ function App() {
           {items.length > 0 && <QueueList items={items} onDownload={downloadItem} onDownloadBatch={downloadBatch} />}
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>
-      <footer><span>File Utility · private file tools</span><span>Web ready · desktop and mobile compatible</span></footer>
+      <footer><span>Formatly · private file tools</span><span>Web ready · desktop and mobile compatible</span></footer>
     </main>
   )
 }

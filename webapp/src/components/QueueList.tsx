@@ -20,14 +20,14 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
           <button className="download-button btn btn-link btn-sm p-0" disabled={!completedItems.length} onClick={onDownloadBatch}>Download batch</button>
         </div>
       </div>
-      <div className="batch-progress progress" role="progressbar" aria-valuenow={batchProgress} aria-valuemin={0} aria-valuemax={100}><span className="progress-bar bg-warning" style={{ width: `${batchProgress}%` }} /></div>
+      <div className="batch-progress progress" role="progressbar" aria-valuenow={batchProgress} aria-valuemin={0} aria-valuemax={100}><span className={`progress-bar ${progressClass(batchProgress)}`} /></div>
       {items.map((item) => (
         <div className="file-row row align-items-center g-3" key={item.id}>
           <div className="file-icon col-auto">{item.file.name.split('.').pop()?.toUpperCase()}</div>
           <div className="file-meta col min-w-0">
             <strong title={item.file.name}>{item.file.name}</strong>
             <span>{item.message ?? 'Waiting to process'}</span>
-            <div className="item-progress progress"><span className="progress-bar bg-warning" style={{ width: `${item.progress}%` }} /></div>
+            <div className="item-progress progress"><span className={`progress-bar ${progressClass(item.progress)}`} /></div>
           </div>
           <SizeMetrics item={item} />
           <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
@@ -69,4 +69,8 @@ function formatSignedBytes(bytes: number) {
 
 function formatSignedPercent(percent: number) {
   return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`
+}
+
+function progressClass(value: number) {
+  return `progress-${Math.min(100, Math.max(0, Math.round(value / 5) * 5))}`
 }
