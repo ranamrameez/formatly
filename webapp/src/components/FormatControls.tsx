@@ -8,9 +8,10 @@ type FormatControlsProps = {
   onFormatChange: (format: OutputFormat) => void
   onQualityChange: (quality: number) => void
   onConvert: () => void
+  onReset: () => void
 }
 
-export function FormatControls({ format, mode, quality, disabled, onFormatChange, onQualityChange, onConvert }: FormatControlsProps) {
+export function FormatControls({ format, mode, quality, disabled, onFormatChange, onQualityChange, onConvert, onReset }: FormatControlsProps) {
   return (
     <div className="control-row row gy-3 align-items-end">
       {mode === 'convert' && <div className="col-12 col-md-auto">
@@ -25,9 +26,12 @@ export function FormatControls({ format, mode, quality, disabled, onFormatChange
         <span className="control-label">{mode === 'compress' ? 'Compression quality' : 'Output quality'} <strong>{quality}%</strong></span>
         <input className="form-range" type="range" min="20" max="100" value={quality} onChange={(event) => onQualityChange(Number(event.target.value))} />
       </div>
-      <button className="convert-button btn btn-success col-12 col-md-auto" disabled={disabled} onClick={onConvert}>
-        {disabled ? 'Add files to start' : mode === 'compress' ? 'Compress batch' : 'Convert batch'} <span>→</span>
-      </button>
+      <div className="control-actions col-12 col-md-auto d-flex gap-2">
+        <button className="reset-button btn btn-outline-secondary" disabled={disabled} onClick={onReset} title="Reset the current batch"><span aria-hidden="true">↺</span> Reset</button>
+        <button className="convert-button btn btn-success" disabled={disabled} onClick={onConvert}>
+          {disabled ? 'Add files to start' : mode === 'compress' ? 'Compress batch' : 'Convert batch'} <span aria-hidden="true">→</span>
+        </button>
+      </div>
     </div>
   )
 }

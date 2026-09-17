@@ -27,11 +27,11 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
           <div className="file-meta col min-w-0">
             <strong title={item.file.name}>{item.file.name}</strong>
             <span>{item.message ?? 'Waiting to process'}</span>
+            <SizeMetrics item={item} />
             <div className="item-progress progress"><span className={`progress-bar ${progressClass(item.progress)}`} /></div>
           </div>
-          <SizeMetrics item={item} />
-          <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
-          {item.status === 'Done' && <button className="download-button btn btn-link btn-sm col-auto" onClick={() => onDownload(item)}>Download</button>}
+          <StatusPill status={item.status} />
+          {item.status === 'Done' && <button className="download-button btn btn-outline-success btn-sm col-auto" onClick={() => onDownload(item)} title="Download this file"><span aria-hidden="true">↓</span> Download {downloadChange(item)}</button>}
         </div>
       ))}
     </section>
@@ -44,13 +44,24 @@ function SizeMetrics({ item }: { item: QueueItem }) {
   const percent = difference === undefined ? undefined : (difference / item.file.size) * 100
 
   return (
-    <div className="size-metrics col-12 col-lg-4 row row-cols-2 row-cols-sm-4 g-2 text-secondary small">
+    <div className="size-metrics row row-cols-2 row-cols-sm-4 g-2 text-secondary small">
       <Metric label="Initial" value={formatBytes(item.file.size)} />
       <Metric label="Final" value={finalSize === undefined ? '-' : formatBytes(finalSize)} />
       <Metric label="Difference" value={difference === undefined ? '-' : formatSignedBytes(difference)} />
       <Metric label="Size %" value={percent === undefined ? '-' : formatSignedPercent(percent)} />
     </div>
   )
+}
+
+function StatusPill({ status }: { status: QueueItem['status'] }) {
+  const icon = status === 'Done' ? '✓' : status === 'Error' ? '!' : status === 'Converting' ? '…' : '○'
+  return <span className={`status-pill status-${status.toLowerCase()}`} title={status} aria-label={status}><span aria-hidden="true">{icon}</span></span>
+}
+
+function downloadChange(item: QueueItem) {
+  if (!item.output) return ''
+  const change = Math.round((1 - item.output.size / item.file.size) * 100)
+  return `${change >= 0 ? '-' : '+'}${Math.abs(change)}%`
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

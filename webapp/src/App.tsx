@@ -5,6 +5,7 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { FileDropzone } from './components/FileDropzone'
 import { FormatControls } from './components/FormatControls'
 import { QueueList } from './components/QueueList'
+import { SettingsPanel } from './components/SettingsPanel'
 import type { OutputFormat, ProcessingMode, QueueItem } from './types'
 import './App.css'
 
@@ -21,6 +22,9 @@ function App() {
   const [activeView, setActiveView] = useState<View>('Convert')
   const [isDragging, setIsDragging] = useState(false)
   const [isConverting, setIsConverting] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : 'convert'
 
   const addFiles = (files: File[]) => {
     const accepted = files.filter((file) => supportedTypes.includes(file.type) || file.name.toLowerCase().endsWith('.pdf'))
@@ -33,15 +37,18 @@ function App() {
       message: rejectedCount ? `${rejectedCount} unsupported file(s) skipped` : undefined,
     }))
     setItems((current) => [...current, ...newItems])
+    if (newItems.length > 0) void processItems(newItems, processingMode)
   }
 
-  const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : 'convert'
-
   const processBatch = async () => {
-    if (isConverting) return
+    await processItems(items.filter((entry) => entry.status !== 'Done'), processingMode)
+  }
+
+  const processItems = async (batchItems: QueueItem[], mode: ProcessingMode) => {
+    if (isConverting || !batchItems.length) return
     setIsConverting(true)
-    for (const item of items.filter((entry) => entry.status !== 'Done')) {
-      await processItem(item, processingMode)
+    for (const item of batchItems) {
+      await processItem(item, mode)
     }
     setIsConverting(false)
   }
@@ -97,7 +104,7 @@ function App() {
             <button key={view} className={activeView === view ? 'nav-link active' : 'nav-link'} onClick={() => setActiveView(view)}>{view}</button>
           ))}
         </nav>
-        <button className="icon-button" title="Settings" aria-label="Settings">⚙</button>
+        <button className={isSettingsOpen ? 'icon-button active' : 'icon-button'} title="Settings" aria-label="Settings" onClick={() => setIsSettingsOpen((open) => !open)}>⚙</button>
       </header>
       <section className="workspace">
         <div className="intro">
@@ -113,8 +120,9 @@ function App() {
             <button className={activeView === 'Convert' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Convert')}>Convert formats</button>
             <button className={activeView === 'Compress' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Compress')}>Compress files</button>
           </div>
+          {isSettingsOpen && <SettingsPanel quality={quality} onQualityChange={setQuality} onClose={() => setIsSettingsOpen(false)} />}
           <FileDropzone isDragging={isDragging} onFiles={addFiles} onDraggingChange={setIsDragging} />
-          <FormatControls format={format} mode={processingMode} quality={quality} disabled={!items.length || isConverting} onFormatChange={setFormat} onQualityChange={setQuality} onConvert={processBatch} />
+          <FormatControls format={format} mode={processingMode} quality={quality} disabled={!items.length || isConverting} onFormatChange={setFormat} onQualityChange={setQuality} onConvert={processBatch} onReset={() => setItems([])} />
           {items.length > 0 && <QueueList items={items} onDownload={downloadItem} onDownloadBatch={downloadBatch} />}
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>
