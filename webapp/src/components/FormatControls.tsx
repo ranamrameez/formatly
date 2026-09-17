@@ -1,4 +1,5 @@
 import type { OutputFormat, ProcessingMode } from '../types'
+import { RotateCcw, ArrowRight } from 'lucide-react'
 
 type FormatControlsProps = {
   format: OutputFormat
@@ -24,14 +25,18 @@ export function FormatControls({ format, mode, quality, disabled, onFormatChange
         </div>}
       <div className="quality-control col-12 col-md">
         <span className="control-label">{mode === 'compress' ? 'Compression quality' : 'Output quality'} <strong>{quality}%</strong></span>
-        <input className="form-range" type="range" min="20" max="100" value={quality} onChange={(event) => onQualityChange(Number(event.target.value))} />
+        <input className={`form-range quality-${qualityLevel(quality)}`} type="range" min="20" max="100" value={quality} onChange={(event) => onQualityChange(Number(event.target.value))} />
       </div>
       <div className="control-actions col-12 col-md-auto d-flex gap-2">
-        <button className="reset-button btn btn-outline-secondary" disabled={disabled} onClick={onReset} title="Reset the current batch"><span aria-hidden="true">↺</span> Reset</button>
+        <button className="reset-button btn btn-outline-secondary" disabled={disabled} onClick={onReset} title="Reset the current batch"><RotateCcw size={15} /> Reset</button>
         <button className="convert-button btn btn-success" disabled={disabled} onClick={onConvert}>
-          {disabled ? 'Add files to start' : mode === 'compress' ? 'Compress batch' : 'Convert batch'} <span aria-hidden="true">→</span>
+          {disabled ? 'Add files to start' : mode === 'compress' ? 'Compress batch' : 'Convert batch'} <ArrowRight size={16} />
         </button>
       </div>
     </div>
   )
+}
+
+function qualityLevel(value: number) {
+  return Math.min(100, Math.max(20, Math.round(value / 5) * 5))
 }

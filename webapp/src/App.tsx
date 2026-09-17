@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
+import { Settings } from 'lucide-react'
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { FileDropzone } from './components/FileDropzone'
@@ -18,7 +19,7 @@ type View = 'Convert' | 'Compress' | 'Recent'
 function App() {
   const [items, setItems] = useState<QueueItem[]>([])
   const [format, setFormat] = useState<OutputFormat>('jpg')
-  const [quality, setQuality] = useState(90)
+  const [quality, setQuality] = useState(95)
   const [activeView, setActiveView] = useState<View>('Convert')
   const [isDragging, setIsDragging] = useState(false)
   const [isConverting, setIsConverting] = useState(false)
@@ -104,7 +105,7 @@ function App() {
             <button key={view} className={activeView === view ? 'nav-link active' : 'nav-link'} onClick={() => setActiveView(view)}>{view}</button>
           ))}
         </nav>
-        <button className={isSettingsOpen ? 'icon-button active' : 'icon-button'} title="Settings" aria-label="Settings" onClick={() => setIsSettingsOpen((open) => !open)}>⚙</button>
+        <button className={isSettingsOpen ? 'icon-button active' : 'icon-button'} title="Settings" aria-label="Settings" onClick={() => setIsSettingsOpen((open) => !open)}><Settings size={18} /></button>
       </header>
       <section className="workspace">
         <div className="intro">
@@ -155,7 +156,7 @@ async function createOutput(file: File, mode: ProcessingMode, selectedFormat: Ou
       canvas.width = Math.ceil(viewport.width)
       canvas.height = Math.ceil(viewport.height)
       await page.render({ canvas, viewport }).promise
-      const blob = await encodeCanvas(canvas, file.size / pdfDocument.numPages, selectedFormat, selectedQuality)
+      const blob = await encodeCanvas(canvas, file.size / pdfDocument.numPages, selectedFormat, selectedQuality, false)
       if (!blob) return { blob: null }
       archive.file(`${withoutExtension(file.name)}-page-${pageNumber}.${selectedFormat}`, blob)
     }
@@ -164,7 +165,7 @@ async function createOutput(file: File, mode: ProcessingMode, selectedFormat: Ou
 
   const canvas = await createImageCanvas(file)
   const outputFormat = mode === 'compress' ? sourceFormat(file) : selectedFormat
-  const blob = await encodeCanvas(canvas, file.size, outputFormat, selectedQuality)
+  const blob = await encodeCanvas(canvas, file.size, outputFormat, selectedQuality, mode === 'compress')
   return { blob, outputName: `${withoutExtension(file.name)}.${outputFormat}`, pageCount: 0 }
 }
 
@@ -187,17 +188,17 @@ async function createImageCanvas(file: File) {
   }
 }
 
-async function encodeCanvas(source: HTMLCanvasElement, sourceSize: number, format: OutputFormat, requestedQuality: number) {
+async function encodeCanvas(source: HTMLCanvasElement, sourceSize: number, format: OutputFormat, requestedQuality: number, allowResize: boolean) {
   let canvas = source
   let blob = await canvasToBlob(canvas, format, requestedQuality)
-  for (let attempt = 0; blob && blob.size > sourceSize && attempt < 3; attempt += 1) {
+  for (let attempt = 0; allowResize && blob && blob.size > sourceSize && attempt < 2; attempt += 1) {
     const scale = 0.8
     const resized = document.createElement('canvas')
     resized.width = Math.max(1, Math.floor(canvas.width * scale))
     resized.height = Math.max(1, Math.floor(canvas.height * scale))
     resized.getContext('2d')?.drawImage(canvas, 0, 0, resized.width, resized.height)
     canvas = resized
-    blob = await canvasToBlob(canvas, format, Math.max(45, requestedQuality - (attempt + 1) * 12))
+    blob = await canvasToBlob(canvas, format, Math.max(65, requestedQuality - (attempt + 1) * 8))
   }
   return blob
 }

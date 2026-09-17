@@ -1,4 +1,5 @@
 import type { QueueItem } from '../types'
+import { AlertCircle, Check, Circle, Download, LoaderCircle } from 'lucide-react'
 
 type QueueListProps = {
   items: QueueItem[]
@@ -31,7 +32,7 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
             <div className="item-progress progress"><span className={`progress-bar ${progressClass(item.progress)}`} /></div>
           </div>
           <StatusPill status={item.status} />
-          {item.status === 'Done' && <button className="download-button btn btn-outline-success btn-sm col-auto" onClick={() => onDownload(item)} title="Download this file"><span aria-hidden="true">↓</span> Download {downloadChange(item)}</button>}
+          {item.status === 'Done' && <button className="download-button btn btn-outline-success btn-sm col-auto" onClick={() => onDownload(item)} title="Download this file"><Download size={14} /> Download {downloadChange(item)}</button>}
         </div>
       ))}
     </section>
@@ -54,8 +55,8 @@ function SizeMetrics({ item }: { item: QueueItem }) {
 }
 
 function StatusPill({ status }: { status: QueueItem['status'] }) {
-  const icon = status === 'Done' ? '✓' : status === 'Error' ? '!' : status === 'Converting' ? '…' : '○'
-  return <span className={`status-pill status-${status.toLowerCase()}`} title={status} aria-label={status}><span aria-hidden="true">{icon}</span></span>
+  const Icon = status === 'Done' ? Check : status === 'Error' ? AlertCircle : status === 'Converting' ? LoaderCircle : Circle
+  return <span className={`status-pill status-${status.toLowerCase()}`} title={status} aria-label={status}><Icon size={15} /></span>
 }
 
 function downloadChange(item: QueueItem) {
