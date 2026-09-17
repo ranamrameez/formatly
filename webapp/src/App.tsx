@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
+import { PDFDocument } from 'pdf-lib'
 import { Settings } from 'lucide-react'
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
@@ -68,9 +69,8 @@ function App() {
       if (!blob) {
         updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not create output' })
       } else {
-        const sizeChange = Math.round((1 - blob.size / item.file.size) * 100)
         const pageMessage = pageCount ? `${pageCount} pages converted` : mode === 'compress' ? 'compressed locally' : 'converted locally'
-        updateItem(item.id, { status: 'Done', progress: 100, output: blob, outputName, message: `${pageMessage} · ${sizeChange}% size change · ${formatBytes(blob.size)}` })
+        updateItem(item.id, { status: 'Done', progress: 100, output: blob, outputName, message: `${pageMessage} · ${formatBytes(blob.size)}` })
       }
       resolve()
     }).catch(() => {
@@ -159,8 +159,10 @@ function downloadBlob(blob: Blob, filename: string) {
 
 async function createOutput(file: File, mode: ProcessingMode, selectedFormat: OutputFormat, selectedQuality: number) {
   if (isPdf(file)) {
+    if (selectedFormat === 'pdf') return { blob: file, outputName: file.name, pageCount: 1 }
     const pdfDocument = await getDocument({ data: await file.arrayBuffer() }).promise
     const archive = new JSZip()
+    const pageOutputs: Blob[] = []
     for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
       const page = await pdfDocument.getPage(pageNumber)
       const viewport = page.getViewport({ scale: 1.5 })
@@ -170,12 +172,15 @@ async function createOutput(file: File, mode: ProcessingMode, selectedFormat: Ou
       await page.render({ canvas, viewport }).promise
       const blob = await encodeCanvas(canvas, file.size / pdfDocument.numPages, selectedFormat, selectedQuality, false)
       if (!blob) return { blob: null }
+      pageOutputs.push(blob)
       archive.file(`${withoutExtension(file.name)}-page-${pageNumber}.${selectedFormat}`, blob)
     }
+    if (pageOutputs.length === 1) return { blob: pageOutputs[0], outputName: `${withoutExtension(file.name)}.${selectedFormat}`, pageCount: 1 }
     return { blob: await archive.generateAsync({ type: 'blob' }), outputName: `${withoutExtension(file.name)}-pages.zip`, pageCount: pdfDocument.numPages }
   }
 
   const canvas = await createImageCanvas(file)
+  if (selectedFormat === 'pdf' && mode === 'convert') return createPdfOutput(canvas, file.name)
   const outputFormat = mode === 'compress' ? sourceFormat(file) : selectedFormat
   const blob = await encodeCanvas(canvas, file.size, outputFormat, selectedQuality, mode === 'compress')
   return { blob, outputName: `${withoutExtension(file.name)}.${outputFormat}`, pageCount: 0 }
@@ -219,6 +224,20 @@ function canvasToBlob(canvas: HTMLCanvasElement, format: OutputFormat, quality: 
   return new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : `image/${format}`, format === 'png' ? undefined : quality / 100)
   })
+}
+
+async function createPdfOutput(canvas: HTMLCanvasElement, name: string) {
+  const imageBlob = await canvasToBlob(canvas, 'jpg', 95)
+  if (!imageBlob) return { blob: null, pageCount: 0 }
+  const imageBytes = await imageBlob.arrayBuffer()
+  const pdf = await PDFDocument.create()
+  const image = await pdf.embedJpg(imageBytes)
+  const page = pdf.addPage([canvas.width, canvas.height])
+  page.drawImage(image, { x: 0, y: 0, width: canvas.width, height: canvas.height })
+  const pdfBytes = await pdf.save()
+  const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength)
+  new Uint8Array(pdfBuffer).set(pdfBytes)
+  return { blob: new Blob([pdfBuffer], { type: 'application/pdf' }), outputName: `${withoutExtension(name)}.pdf`, pageCount: 1 }
 }
 
 function isPdf(file: File) {

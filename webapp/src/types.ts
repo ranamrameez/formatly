@@ -1,4 +1,4 @@
-export type OutputFormat = 'png' | 'jpg' | 'webp'
+export type OutputFormat = 'png' | 'jpg' | 'webp' | 'pdf'
 export type QueueStatus = 'Ready' | 'Converting' | 'Done' | 'Error'
 export type ProcessingMode = 'convert' | 'compress'
 

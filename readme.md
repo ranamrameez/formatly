@@ -18,7 +18,7 @@ File Utility will help people process documents and images without juggling sepa
 - Multi-file drag-and-drop and file-picker input.
 - Conversion between supported document and image formats.
 - Browser-side image input support for PDF, JPG/JPEG, PNG, WebP, GIF, BMP, AVIF, and SVG when the browser can decode the file.
-- Browser-side output support for PNG, JPG, and WebP.
+- Browser-side output support for PNG, JPG/JPEG, WebP, and PDF for image inputs.
 - Compression with quality, size, and format controls.
 - Batch queue with progress, retry, cancellation, and clear errors.
 - Individual downloads and one-click batch download.

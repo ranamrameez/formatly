@@ -27,9 +27,11 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
           <div className="file-icon col-auto">{item.file.name.split('.').pop()?.toUpperCase()}</div>
           <div className="file-meta col min-w-0">
             <strong title={item.file.name}>{item.file.name}</strong>
-            <span>{item.message ?? 'Waiting to process'}</span>
             <SizeMetrics item={item} />
-            <div className="item-progress progress"><span className={`progress-bar ${progressClass(item.progress)}`} /></div>
+            <div className="item-progress progress" role="progressbar" aria-valuenow={item.progress} aria-valuemin={0} aria-valuemax={100}>
+              <span className={`progress-bar ${progressClass(item.progress)}`} />
+              <span className="progress-status">{item.message ?? 'Waiting to process'}</span>
+            </div>
           </div>
           <StatusPill status={item.status} />
           {item.status === 'Done' && <button className="download-button btn btn-outline-success btn-sm col-auto" onClick={() => onDownload(item)} title="Download this file"><Download size={14} /> Download {downloadChange(item)}</button>}
@@ -42,14 +44,14 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
 function SizeMetrics({ item }: { item: QueueItem }) {
   const finalSize = item.output?.size
   const difference = finalSize === undefined ? undefined : finalSize - item.file.size
-  const percent = difference === undefined ? undefined : (difference / item.file.size) * 100
 
   return (
-    <div className="size-metrics row row-cols-2 row-cols-sm-4 g-2 text-secondary small">
+    <div className="size-metrics d-flex justify-content-between align-items-center text-secondary small">
       <Metric label="Initial" value={formatBytes(item.file.size)} />
-      <Metric label="Final" value={finalSize === undefined ? '-' : formatBytes(finalSize)} />
-      <Metric label="Difference" value={difference === undefined ? '-' : formatSignedBytes(difference)} />
-      <Metric label="Size %" value={percent === undefined ? '-' : formatSignedPercent(percent)} />
+      <div className="size-metric-group d-flex gap-3">
+        <Metric label="Difference" value={difference === undefined ? '-' : formatSignedBytes(difference)} />
+      </div>
+      <Metric label="Final" value={finalSize === undefined ? '-' : formatBytes(finalSize)} align="end" />
     </div>
   )
 }
@@ -65,11 +67,12 @@ function downloadChange(item: QueueItem) {
   return `${change >= 0 ? '-' : '+'}${Math.abs(change)}%`
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <div><span className="d-block text-uppercase metrics-label">{label}</span><strong className="text-body">{value}</strong></div>
+function Metric({ label, value, align = 'start' }: { label: string; value: string; align?: 'start' | 'end' }) {
+  return <div className={`size-pill text-${align}`}><span className="metrics-label">{label}</span><strong className="text-body">{value}</strong></div>
 }
 
 function formatBytes(bytes: number) {
+  bytes = Math.abs(bytes)
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -77,10 +80,6 @@ function formatBytes(bytes: number) {
 
 function formatSignedBytes(bytes: number) {
   return `${bytes > 0 ? '+' : bytes < 0 ? '-' : ''}${formatBytes(bytes)}`
-}
-
-function formatSignedPercent(percent: number) {
-  return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`
 }
 
 function progressClass(value: number) {
