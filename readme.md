@@ -58,14 +58,94 @@ File Utility will help people process documents and images without juggling sepa
 
 - Add end-to-end coverage, performance checks, packaging, and release automation.
 
-## Web Development
+## New PC Setup
+
+These instructions target Windows PowerShell.
+
+### 1. Install prerequisites
+
+Install the following tools:
+
+- Git: https://git-scm.com/download/win
+- Node.js 22 LTS: https://nodejs.org/
+- VS Code: https://code.visualstudio.com/
+
+Verify the installations:
+
+```powershell
+git --version
+node --version
+npm.cmd --version
+```
+
+The Node.js version should be 22 or newer. Restart VS Code after installing Node.js if the commands are not found.
+
+### 2. Clone the repository
+
+Replace the URL with the repository URL from GitHub:
+
+```powershell
+git clone <repository-url> FileConverter
+Set-Location FileConverter
+```
+
+If the repository is already on the computer:
+
+```powershell
+Set-Location D:\Coding\FileConverter
+git pull
+```
+
+### 3. Install web dependencies
+
+Install dependencies from the committed lockfile:
 
 ```powershell
 Set-Location webapp
-npm install
-npm run dev
-npm run lint
-npm run build
+npm.cmd ci
+```
+
+Use `npm.cmd` in PowerShell when the execution policy blocks `npm.ps1`.
+
+### 4. Start the development server
+
+```powershell
+npm.cmd run dev
+```
+
+Open the URL shown in the terminal, usually:
+
+```text
+http://localhost:5173
+```
+
+Keep the terminal running while developing. Press `Ctrl+C` to stop the server.
+
+### 5. Validate changes
+
+Run these commands from `webapp/` before committing:
+
+```powershell
+npm.cmd run lint
+npm.cmd run build
+```
+
+### 6. Preview a production build
+
+```powershell
+npm.cmd run build
+npm.cmd run preview
+```
+
+The preview server serves the production build locally.
+
+## Web Development
+
+```powershell
+npm.cmd --prefix webapp ci
+npm.cmd --prefix webapp run dev
+npm.cmd --prefix webapp run lint
+npm.cmd --prefix webapp run build
 ```
 
 See [webapp/AI_README.md](webapp/AI_README.md), [android/AI_README.md](android/AI_README.md), and [api/readme.md](api/readme.md) for platform boundaries.
