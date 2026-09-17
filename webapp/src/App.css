@@ -33,7 +33,7 @@ button { cursor: pointer; }
 .workspace { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: clamp(28px, 4vw, 48px) 0 64px; }
 .intro { display: flex; align-items: end; justify-content: space-between; gap: 32px; margin-bottom: 24px; }
 .eyebrow, .control-label { margin: 0 0 10px; color: var(--accent); font: 700 .72rem/1.2 'Source Sans 3', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
-h1 { max-width: 680px; margin: 0; color: var(--ink); font: 600 clamp(2.35rem, 5vw, 4.2rem)/.98 'Source Serif 4', Georgia, serif; letter-spacing: -.025em; }
+h1 { margin: 0; color: var(--ink); font: 600 clamp(2.35rem, 5vw, 4.2rem)/.98 'Source Serif 4', Georgia, serif; letter-spacing: -.025em; }
 .subtitle { max-width: 560px; margin: 18px 0 0; color: var(--muted); font-size: 1.05rem; line-height: 1.55; }
 .privacy-note { display: flex; gap: 10px; align-items: center; color: var(--teal); font-weight: 700; font-size: .82rem; white-space: nowrap; }
 .privacy-note small { color: var(--muted); font-size: .75rem; font-weight: 400; }

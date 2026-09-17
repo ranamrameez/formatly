@@ -13,7 +13,8 @@ import './App.css'
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
-const supportedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp']
+const supportedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/bmp', 'image/avif', 'image/svg+xml']
+const supportedExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif', '.svg']
 
 type View = 'Convert' | 'Compress' | 'Recent'
 
@@ -30,7 +31,7 @@ function App() {
   const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : 'convert'
 
   const addFiles = (files: File[]) => {
-    const accepted = files.filter((file) => supportedTypes.includes(file.type) || file.name.toLowerCase().endsWith('.pdf'))
+    const accepted = files.filter((file) => supportedTypes.includes(file.type) || supportedExtensions.some((extension) => file.name.toLowerCase().endsWith(extension)))
     const rejectedCount = files.length - accepted.length
     const newItems = accepted.map((file) => ({
       id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
@@ -130,7 +131,7 @@ function App() {
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>
       <footer>
-        <span>Formatly · private file tools</span>
+        <span>Formatly · Processes common files locally on your PC without uploading them to external services.</span>
         <nav className="legal-links" aria-label="Legal links">
           <a href={`${import.meta.env.BASE_URL}legal/privacy-policy.html`}>Privacy</a>
           <a href={`${import.meta.env.BASE_URL}legal/terms-and-conditions.html`}>Terms</a>
@@ -231,6 +232,7 @@ function sourceFormat(file: File): OutputFormat {
 }
 
 function formatBytes(bytes: number) {
+  bytes = Math.abs(bytes)
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`

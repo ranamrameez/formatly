@@ -76,7 +76,7 @@ function formatBytes(bytes: number) {
 }
 
 function formatSignedBytes(bytes: number) {
-  return `${bytes > 0 ? '+' : ''}${formatBytes(bytes)}`
+  return `${bytes > 0 ? '+' : bytes < 0 ? '-' : ''}${formatBytes(bytes)}`
 }
 
 function formatSignedPercent(percent: number) {
