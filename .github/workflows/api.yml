@@ -1,0 +1,20 @@
+name: Processing API
+
+on:
+  push:
+    paths:
+      - 'api/**'
+      - '.github/workflows/api.yml'
+  pull_request:
+    paths:
+      - 'api/**'
+      - '.github/workflows/api.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check API documentation
+        shell: bash
+        run: test -s api/readme.md

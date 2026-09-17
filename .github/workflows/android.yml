@@ -1,0 +1,20 @@
+name: Android app
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check mobile documentation
+        shell: bash
+        run: test -s android/AI_README.md && test -s android/readme.md
