@@ -5,7 +5,7 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { FileDropzone } from './components/FileDropzone'
 import { FormatControls } from './components/FormatControls'
 import { QueueList } from './components/QueueList'
-import type { OutputFormat, QueueItem } from './types'
+import type { OutputFormat, ProcessingMode, QueueItem } from './types'
 import './App.css'
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl
@@ -17,7 +17,7 @@ type View = 'Convert' | 'Compress' | 'Recent'
 function App() {
   const [items, setItems] = useState<QueueItem[]>([])
   const [format, setFormat] = useState<OutputFormat>('jpg')
-  const [quality, setQuality] = useState(82)
+  const [quality, setQuality] = useState(90)
   const [activeView, setActiveView] = useState<View>('Convert')
   const [isDragging, setIsDragging] = useState(false)
   const [isConverting, setIsConverting] = useState(false)
@@ -35,26 +35,31 @@ function App() {
     setItems((current) => [...current, ...newItems])
   }
 
-  const convertBatch = async () => {
+  const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : 'convert'
+
+  const processBatch = async () => {
     if (isConverting) return
     setIsConverting(true)
     for (const item of items.filter((entry) => entry.status !== 'Done')) {
-      await convertItem(item)
+      await processItem(item, processingMode)
     }
     setIsConverting(false)
   }
 
-  const convertItem = (item: QueueItem) => new Promise<void>((resolve) => {
+  const processItem = (item: QueueItem, mode: ProcessingMode) => new Promise<void>((resolve) => {
     updateItem(item.id, { status: 'Converting', progress: 10, message: undefined })
-    createCanvas(item.file).then(async (canvas) => {
-      updateItem(item.id, { progress: 55 })
-      const blob = await encodeCanvas(canvas, item.file.size, format, quality)
+    if (mode === 'compress' && isPdf(item.file)) {
+      updateItem(item.id, { status: 'Error', progress: 0, message: 'PDF compression is not available in the browser yet' })
+      resolve()
+      return
+    }
+    createOutput(item.file, mode, format, quality).then(async ({ blob, outputName, pageCount }) => {
       if (!blob) {
         updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not create output' })
       } else {
         const sizeChange = Math.round((1 - blob.size / item.file.size) * 100)
-        const message = item.file.type === 'application/pdf' ? `page 1 converted · ${formatBytes(blob.size)}` : `${sizeChange}% size change · ${formatBytes(blob.size)}`
-        updateItem(item.id, { status: 'Done', progress: 100, output: blob, message })
+        const pageMessage = pageCount ? `${pageCount} pages converted` : mode === 'compress' ? 'compressed locally' : 'converted locally'
+        updateItem(item.id, { status: 'Done', progress: 100, output: blob, outputName, message: `${pageMessage} · ${sizeChange}% size change · ${formatBytes(blob.size)}` })
       }
       resolve()
     }).catch(() => {
@@ -69,13 +74,13 @@ function App() {
 
   const downloadItem = (item: QueueItem) => {
     if (!item.output) return
-    downloadBlob(item.output, `${withoutExtension(item.file.name)}.${format}`)
+    downloadBlob(item.output, item.outputName ?? `${withoutExtension(item.file.name)}.${format}`)
   }
 
   const downloadBatch = async () => {
     const zip = new JSZip()
     items.filter((item) => item.status === 'Done' && item.output).forEach((item) => {
-      zip.file(`${withoutExtension(item.file.name)}.${format}`, item.output!)
+      zip.file(item.outputName ?? `${withoutExtension(item.file.name)}.${format}`, item.output!)
     })
     const archive = await zip.generateAsync({ type: 'blob' })
     downloadBlob(archive, 'file-utility-batch.zip')
@@ -98,8 +103,8 @@ function App() {
         <div className="intro">
           <div>
             <p className="eyebrow">{activeView === 'Compress' ? 'FILE OPTIMIZATION' : 'DOCUMENT WORKBENCH'}</p>
-            <h1>{activeView === 'Recent' ? 'Your recent work' : 'Make files lighter.'}</h1>
-            <p className="subtitle">Convert, compress, and batch-download files without sending them anywhere.</p>
+            <h1>{activeView === 'Recent' ? 'Your recent work' : activeView === 'Compress' ? 'Shrink files with control.' : 'Move files between formats.'}</h1>
+            <p className="subtitle">{activeView === 'Compress' ? 'Reduce file size while keeping your files useful.' : 'Convert, preview, and batch-download files without sending them anywhere.'}</p>
           </div>
           <div className="privacy-note"><span>◉</span><span>Local by default<br /><small>Files stay on this device</small></span></div>
         </div>
@@ -109,7 +114,7 @@ function App() {
             <button className={activeView === 'Compress' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Compress')}>Compress files</button>
           </div>
           <FileDropzone isDragging={isDragging} onFiles={addFiles} onDraggingChange={setIsDragging} />
-          <FormatControls format={format} quality={quality} disabled={!items.length || isConverting} onFormatChange={setFormat} onQualityChange={setQuality} onConvert={convertBatch} />
+          <FormatControls format={format} mode={processingMode} quality={quality} disabled={!items.length || isConverting} onFormatChange={setFormat} onQualityChange={setQuality} onConvert={processBatch} />
           {items.length > 0 && <QueueList items={items} onDownload={downloadItem} onDownloadBatch={downloadBatch} />}
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>
@@ -131,18 +136,31 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-async function createCanvas(file: File) {
-  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+async function createOutput(file: File, mode: ProcessingMode, selectedFormat: OutputFormat, selectedQuality: number) {
+  if (isPdf(file)) {
     const pdfDocument = await getDocument({ data: await file.arrayBuffer() }).promise
-    const page = await pdfDocument.getPage(1)
-    const viewport = page.getViewport({ scale: 1.5 })
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.ceil(viewport.width)
-    canvas.height = Math.ceil(viewport.height)
-    await page.render({ canvas, viewport }).promise
-    return canvas
+    const archive = new JSZip()
+    for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
+      const page = await pdfDocument.getPage(pageNumber)
+      const viewport = page.getViewport({ scale: 1.5 })
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(viewport.width)
+      canvas.height = Math.ceil(viewport.height)
+      await page.render({ canvas, viewport }).promise
+      const blob = await encodeCanvas(canvas, file.size / pdfDocument.numPages, selectedFormat, selectedQuality)
+      if (!blob) return { blob: null }
+      archive.file(`${withoutExtension(file.name)}-page-${pageNumber}.${selectedFormat}`, blob)
+    }
+    return { blob: await archive.generateAsync({ type: 'blob' }), outputName: `${withoutExtension(file.name)}-pages.zip`, pageCount: pdfDocument.numPages }
   }
 
+  const canvas = await createImageCanvas(file)
+  const outputFormat = mode === 'compress' ? sourceFormat(file) : selectedFormat
+  const blob = await encodeCanvas(canvas, file.size, outputFormat, selectedQuality)
+  return { blob, outputName: `${withoutExtension(file.name)}.${outputFormat}`, pageCount: 0 }
+}
+
+async function createImageCanvas(file: File) {
   const source = URL.createObjectURL(file)
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -178,8 +196,18 @@ async function encodeCanvas(source: HTMLCanvasElement, sourceSize: number, forma
 
 function canvasToBlob(canvas: HTMLCanvasElement, format: OutputFormat, quality: number) {
   return new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, `image/${format}`, format === 'jpg' ? quality / 100 : undefined)
+    canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : `image/${format}`, format === 'png' ? undefined : quality / 100)
   })
+}
+
+function isPdf(file: File) {
+  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+}
+
+function sourceFormat(file: File): OutputFormat {
+  if (file.type === 'image/png') return 'png'
+  if (file.type === 'image/webp') return 'webp'
+  return 'jpg'
 }
 
 function formatBytes(bytes: number) {
