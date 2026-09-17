@@ -7,6 +7,7 @@ import { FileDropzone } from './components/FileDropzone'
 import { FormatControls } from './components/FormatControls'
 import { QueueList } from './components/QueueList'
 import { SettingsPanel } from './components/SettingsPanel'
+import { ConsentDialog } from './components/ConsentDialog'
 import type { OutputFormat, ProcessingMode, QueueItem } from './types'
 import './App.css'
 
@@ -24,6 +25,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [isConverting, setIsConverting] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [hasAgreed, setHasAgreed] = useState(() => window.localStorage.getItem('formatly-terms-consent') === 'accepted')
 
   const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : 'convert'
 
@@ -127,7 +129,16 @@ function App() {
           {items.length > 0 && <QueueList items={items} onDownload={downloadItem} onDownloadBatch={downloadBatch} />}
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>
-      <footer><span>Formatly · private file tools</span></footer>
+      <footer>
+        <span>Formatly · private file tools</span>
+        <nav className="legal-links" aria-label="Legal links">
+          <a href={`${import.meta.env.BASE_URL}legal/privacy-policy.html`}>Privacy</a>
+          <a href={`${import.meta.env.BASE_URL}legal/terms-and-conditions.html`}>Terms</a>
+          <a href={`${import.meta.env.BASE_URL}legal/disclaimer.html`}>Disclaimer</a>
+          <a href={`${import.meta.env.BASE_URL}legal/copyright.html`}>Copyright</a>
+        </nav>
+      </footer>
+      {!hasAgreed && <ConsentDialog onAgree={() => { window.localStorage.setItem('formatly-terms-consent', 'accepted'); setHasAgreed(true) }} />}
     </main>
   )
 }
