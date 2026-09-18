@@ -19,7 +19,7 @@ export function SettingsPanel({ quality, onQualityChange, onClose }: SettingsPan
           <button className="icon-button" title="Close settings" aria-label="Close settings" onClick={onClose}><X size={18} /></button>
         </div>
         <label className="settings-quality mt-4">
-          <span className="control-label d-flex justify-content-between">Default quality <strong>{quality}%</strong></span>
+          <span className="control-label d-flex justify-content-between">Default quality &nbsp;<strong> {quality}%</strong></span>
           <input className={`form-range quality-${qualityLevel(quality)}`} type="range" min="20" max="100" value={quality} onChange={(event) => onQualityChange(Number(event.target.value))} />
         </label>
       </div>
