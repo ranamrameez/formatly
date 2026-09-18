@@ -49,23 +49,23 @@ function App() {
     await processItems(items.filter((entry) => entry.status !== 'Done'), processingMode)
   }
 
-  const processItems = async (batchItems: QueueItem[], mode: ProcessingMode) => {
+  const processItems = async (batchItems: QueueItem[], mode: ProcessingMode, selectedFormat = format, selectedQuality = quality) => {
     if (isConverting || !batchItems.length) return
     setIsConverting(true)
     for (const item of batchItems) {
-      await processItem(item, mode)
+      await processItem(item, mode, selectedFormat, selectedQuality)
     }
     setIsConverting(false)
   }
 
-  const processItem = (item: QueueItem, mode: ProcessingMode) => new Promise<void>((resolve) => {
+  const processItem = (item: QueueItem, mode: ProcessingMode, selectedFormat: OutputFormat, selectedQuality: number) => new Promise<void>((resolve) => {
     updateItem(item.id, { status: 'Converting', progress: 10, message: undefined })
     if (mode === 'compress' && isPdf(item.file)) {
       updateItem(item.id, { status: 'Error', progress: 0, message: 'PDF compression is not available in the browser yet' })
       resolve()
       return
     }
-    createOutput(item.file, mode, format, quality).then(async ({ blob, outputName, pageCount }) => {
+    createOutput(item.file, mode, selectedFormat, selectedQuality).then(async ({ blob, outputName, pageCount }) => {
       if (!blob) {
         updateItem(item.id, { status: 'Error', progress: 0, message: 'Could not create output' })
       } else {
@@ -78,6 +78,14 @@ function App() {
       resolve()
     })
   })
+
+  const handleFormatChange = (nextFormat: OutputFormat) => {
+    setFormat(nextFormat)
+    if (!items.length || isConverting) return
+    const resetItems = items.map((item) => ({ ...item, status: 'Ready' as const, progress: 0, message: undefined, output: undefined, outputName: undefined }))
+    setItems(resetItems)
+    void processItems(resetItems, processingMode, nextFormat, quality)
+  }
 
   const updateItem = (id: string, changes: Partial<QueueItem>) => {
     setItems((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item))
@@ -127,7 +135,7 @@ function App() {
           </div>
           {isSettingsOpen && <SettingsPanel quality={quality} onQualityChange={setQuality} onClose={() => setIsSettingsOpen(false)} />}
           <FileDropzone isDragging={isDragging} onFiles={addFiles} onDraggingChange={setIsDragging} />
-          <FormatControls format={format} mode={processingMode} quality={quality} disabled={!items.length || isConverting} onFormatChange={setFormat} onQualityChange={setQuality} onConvert={processBatch} onReset={() => setItems([])} />
+          <FormatControls format={format} mode={processingMode} quality={quality} disabled={!items.length || isConverting} onFormatChange={handleFormatChange} onQualityChange={setQuality} onConvert={processBatch} onReset={() => setItems([])} />
           {items.length > 0 && <QueueList items={items} onDownload={downloadItem} onDownloadBatch={downloadBatch} />}
         </> : <section className="empty-state"><span className="empty-icon">◌</span><h2>No recent files</h2><p>Your converted and compressed files will appear here.</p></section>}
       </section>

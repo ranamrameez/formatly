@@ -30,7 +30,6 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
             <SizeMetrics item={item} />
             <div className="item-progress progress" role="progressbar" aria-valuenow={item.progress} aria-valuemin={0} aria-valuemax={100}>
               <span className={`progress-bar ${progressClass(item.progress)}`} />
-              <span className="progress-status">{item.message ?? 'Waiting to process'}</span>
             </div>
           </div>
           <StatusPill status={item.status} />
@@ -48,9 +47,8 @@ function SizeMetrics({ item }: { item: QueueItem }) {
   return (
     <div className="size-metrics d-flex justify-content-between align-items-center text-secondary small">
       <Metric label="Initial" value={formatBytes(item.file.size)} />
-      <div className="size-metric-group d-flex gap-3">
-        <Metric label="Difference" value={difference === undefined ? '-' : formatSignedBytes(difference)} />
-      </div>
+      <Metric label="Status" value={item.message ?? 'Waiting to process'} className="progress-status" />
+      <Metric label="Difference" value={difference === undefined ? '-' : formatSignedBytes(difference)} />
       <Metric label="Final" value={finalSize === undefined ? '-' : formatBytes(finalSize)} align="end" />
     </div>
   )
@@ -67,8 +65,8 @@ function downloadChange(item: QueueItem) {
   return `${change >= 0 ? '-' : '+'}${Math.abs(change)}%`
 }
 
-function Metric({ label, value, align = 'start' }: { label: string; value: string; align?: 'start' | 'end' }) {
-  return <div className={`size-pill text-${align}`}><span className="metrics-label">{label}</span><strong className="text-body">{value}</strong></div>
+function Metric({ label, value, align = 'start', className = '' }: { label: string; value: string; align?: 'start' | 'end'; className?: string }) {
+  return <div className={`size-pill text-${align} ${className}`}><span className="metrics-label">{label}</span><strong className="text-body">{value}</strong></div>
 }
 
 function formatBytes(bytes: number) {

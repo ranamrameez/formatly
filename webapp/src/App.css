@@ -51,12 +51,12 @@ h1 { margin: 0; color: var(--ink); font: 600 clamp(2.35rem, 5vw, 4.2rem)/.98 'So
 .control-row { padding: 24px 0 10px; }
 .quality-control .control-label { display: flex; justify-content: space-between; color: var(--muted); letter-spacing: .04em; }
 .quality-control strong { color: var(--ink); font-size: 1rem; }
-.quality-control .form-range { accent-color: var(--accent); }
-.quality-control .form-range::-webkit-slider-thumb { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-.quality-control .form-range::-moz-range-thumb { background: var(--accent); border-color: var(--accent); }
-.quality-control .form-range::-webkit-slider-runnable-track { background: var(--slider-track); }
-.quality-control .form-range::-moz-range-track { background: var(--slider-track); }
-.quality-control .form-range::-moz-range-progress { background: var(--accent); }
+.quality-control .form-range, .settings-quality .form-range { accent-color: var(--accent); }
+.quality-control .form-range::-webkit-slider-thumb, .settings-quality .form-range::-webkit-slider-thumb { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.quality-control .form-range::-moz-range-thumb, .settings-quality .form-range::-moz-range-thumb { background: var(--accent); border-color: var(--accent); }
+.quality-control .form-range::-webkit-slider-runnable-track, .settings-quality .form-range::-webkit-slider-runnable-track { background: var(--slider-track); }
+.quality-control .form-range::-moz-range-track, .settings-quality .form-range::-moz-range-track { background: var(--slider-track); }
+.quality-control .form-range::-moz-range-progress, .settings-quality .form-range::-moz-range-progress { background: var(--accent); }
 .quality-20::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--slider-track) 0 0%, var(--slider-track) 0% 100%); }
 .quality-25::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--accent) 0 6%, var(--slider-track) 6% 100%); }
 .quality-30::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--accent) 0 12%, var(--slider-track) 12% 100%); }
@@ -97,7 +97,7 @@ h1 { margin: 0; color: var(--ink); font: 600 clamp(2.35rem, 5vw, 4.2rem)/.98 'So
 .file-type-svg { color: #00796b; border-color: #9ed8d0; background: #e8f7f4; }
 .file-type-gif, .file-type-bmp, .file-type-avif { color: var(--teal); background: var(--teal-soft); }
 .item-progress .progress-bar { height: 100%; }
-.progress-status { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; color: var(--ink); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.progress-status { min-width: min(320px, 34vw); justify-content: center; text-align: center; }
 .size-metrics { margin-top: 6px; }
 .size-pill { display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); }
 .metrics-label { color: var(--muted); font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; }
