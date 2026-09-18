@@ -24,7 +24,7 @@ export function QueueList({ items, onDownload, onDownloadBatch }: QueueListProps
       <div className="batch-progress progress" role="progressbar" aria-valuenow={batchProgress} aria-valuemin={0} aria-valuemax={100}><span className={`progress-bar ${progressClass(batchProgress)}`} /></div>
       {items.map((item) => (
         <div className="file-row row align-items-center g-3" key={item.id}>
-          <div className="file-icon col-auto">{item.file.name.split('.').pop()?.toUpperCase()}</div>
+          <div className={`file-icon file-type-${fileType(item.file.name)} col-auto`}>{fileType(item.file.name).toUpperCase()}</div>
           <div className="file-meta col min-w-0">
             <strong title={item.file.name}>{item.file.name}</strong>
             <SizeMetrics item={item} />
@@ -84,4 +84,9 @@ function formatSignedBytes(bytes: number) {
 
 function progressClass(value: number) {
   return `progress-${Math.min(100, Math.max(0, Math.round(value / 5) * 5))}`
+}
+function fileType(name: string) {
+  const extension = name.split('.').pop()?.toLowerCase() ?? 'file'
+  if (extension === 'jpeg') return 'jpg'
+  return extension
 }

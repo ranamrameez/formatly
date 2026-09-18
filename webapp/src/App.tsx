@@ -17,7 +17,7 @@ GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 const supportedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/bmp', 'image/avif', 'image/svg+xml']
 const supportedExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif', '.svg']
 
-type View = 'Convert' | 'Compress' | 'Recent'
+type View = 'Convert' | 'Compress' | 'Compress & Convert' | 'Recent'
 
 function App() {
   const [items, setItems] = useState<QueueItem[]>([])
@@ -29,7 +29,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [hasAgreed, setHasAgreed] = useState(() => window.localStorage.getItem('formatly-terms-consent') === 'accepted')
 
-  const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : 'convert'
+  const processingMode: ProcessingMode = activeView === 'Compress' ? 'compress' : activeView === 'Compress & Convert' ? 'compress-convert' : 'convert'
 
   const addFiles = (files: File[]) => {
     const accepted = files.filter((file) => supportedTypes.includes(file.type) || supportedExtensions.some((extension) => file.name.toLowerCase().endsWith(extension)))
@@ -113,16 +113,17 @@ function App() {
       <section className="workspace">
         <div className="intro">
           <div>
-            <p className="eyebrow">{activeView === 'Compress' ? 'FILE OPTIMIZATION' : 'DOCUMENT WORKBENCH'}</p>
-            <h1>{activeView === 'Recent' ? 'Your recent work' : activeView === 'Compress' ? 'Shrink files with control.' : 'Move files between formats.'}</h1>
-            <p className="subtitle">{activeView === 'Compress' ? 'Reduce file size while keeping your files useful.' : 'Convert, preview, and batch-download files without sending them anywhere.'}</p>
+            <p className="eyebrow">{activeView === 'Compress' ? 'FILE OPTIMIZATION' : activeView === 'Compress & Convert' ? 'FILE TRANSFORMATION' : 'DOCUMENT WORKBENCH'}</p>
+            <h1>{activeView === 'Recent' ? 'Your recent work' : activeView === 'Compress' ? 'Shrink files with control.' : activeView === 'Compress & Convert' ? 'Shrink and change formats.' : 'Move files between formats.'}</h1>
+            <p className="subtitle">{activeView === 'Compress' ? 'Reduce file size while keeping your files useful.' : activeView === 'Compress & Convert' ? 'Convert and optimize each file in one pass.' : 'Convert, preview, and batch-download files without sending them anywhere.'}</p>
           </div>
           <div className="privacy-note"><span className="privacy-mark" aria-hidden="true">⌂</span><span>Local by default<br /><small>Files stay on this device</small></span></div>
         </div>
         {showWorkspace ? <>
           <div className="mode-tabs nav nav-pills mb-3" role="tablist">
-            <button className={activeView === 'Convert' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Convert')}>Convert formats</button>
-            <button className={activeView === 'Compress' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Compress')}>Compress files</button>
+            <button className={activeView === 'Convert' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Convert')}>Convert</button>
+            <button className={activeView === 'Compress' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Compress')}>Compress</button>
+            <button className={activeView === 'Compress & Convert' ? 'mode nav-link active' : 'mode nav-link'} onClick={() => setActiveView('Compress & Convert')}>Compress &amp; Convert</button>
           </div>
           {isSettingsOpen && <SettingsPanel quality={quality} onQualityChange={setQuality} onClose={() => setIsSettingsOpen(false)} />}
           <FileDropzone isDragging={isDragging} onFiles={addFiles} onDraggingChange={setIsDragging} />
@@ -182,7 +183,7 @@ async function createOutput(file: File, mode: ProcessingMode, selectedFormat: Ou
   const canvas = await createImageCanvas(file)
   if (selectedFormat === 'pdf' && mode === 'convert') return createPdfOutput(canvas, file.name)
   const outputFormat = mode === 'compress' ? sourceFormat(file) : selectedFormat
-  const blob = await encodeCanvas(canvas, file.size, outputFormat, selectedQuality, mode === 'compress')
+  const blob = await encodeCanvas(canvas, file.size, outputFormat, selectedQuality, mode !== 'convert')
   return { blob, outputName: `${withoutExtension(file.name)}.${outputFormat}`, pageCount: 0 }
 }
 
@@ -222,7 +223,7 @@ async function encodeCanvas(source: HTMLCanvasElement, sourceSize: number, forma
 
 function canvasToBlob(canvas: HTMLCanvasElement, format: OutputFormat, quality: number) {
   return new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : `image/${format}`, format === 'png' ? undefined : quality / 100)
+    canvas.toBlob(resolve, format === 'jpg' || format === 'jpeg' ? 'image/jpeg' : `image/${format}`, format === 'png' ? undefined : quality / 100)
   })
 }
 

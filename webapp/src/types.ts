@@ -1,6 +1,6 @@
-export type OutputFormat = 'png' | 'jpg' | 'webp' | 'pdf'
+export type OutputFormat = 'png' | 'jpg' | 'jpeg' | 'webp' | 'pdf'
 export type QueueStatus = 'Ready' | 'Converting' | 'Done' | 'Error'
-export type ProcessingMode = 'convert' | 'compress'
+export type ProcessingMode = 'convert' | 'compress' | 'compress-convert'
 
 export type QueueItem = {
   id: string

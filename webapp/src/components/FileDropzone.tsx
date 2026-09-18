@@ -32,7 +32,7 @@ export function FileDropzone({ isDragging, onFiles, onDraggingChange }: FileDrop
         Browse files
         <input type="file" hidden multiple accept="application/pdf,image/*,.svg" onChange={handleInput} />
       </label>
-      <span className="file-hint text-secondary mt-3">PDF, JPG/JPEG, PNG, WebP, GIF, BMP, AVIF, SVG · processed locally</span>
+      <span className="file-hint text-secondary mt-3">PDF, JPG, JPEG, PNG, WebP, GIF, BMP, AVIF, SVG · processed locally</span>
     </div>
   )
 }
